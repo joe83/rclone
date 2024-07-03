@@ -1013,19 +1013,23 @@ func (f *Fs) list(ctx context.Context, dirIDs []string, title string, directorie
 		if parentsQuery.Len() > 1 {
 			_, _ = parentsQuery.WriteString(" or ")
 		}
-		if (f.opt.SharedWithMe || f.opt.StarredOnly) && dirID == f.rootFolderID {
-			if f.opt.SharedWithMe {
-				_, _ = parentsQuery.WriteString("sharedWithMe=true")
-			}
-			if f.opt.StarredOnly {
+		
+		if(!filesOnly){
+			if (f.opt.SharedWithMe || f.opt.StarredOnly) && dirID == f.rootFolderID {
 				if f.opt.SharedWithMe {
-					_, _ = parentsQuery.WriteString(" and ")
+					_, _ = parentsQuery.WriteString("sharedWithMe=true")
 				}
-				_, _ = parentsQuery.WriteString("starred=true")
+				if f.opt.StarredOnly {
+					if f.opt.SharedWithMe {
+						_, _ = parentsQuery.WriteString(" and ")
+					}
+					_, _ = parentsQuery.WriteString("starred=true")
+				}
+			} else {
+				_, _ = fmt.Fprintf(parentsQuery, "'%s' in parents", dirID)
 			}
-		} else {
-			_, _ = fmt.Fprintf(parentsQuery, "'%s' in parents", dirID)
 		}
+		
 		resourceKey, hasResourceKey := f.dirResourceKeys.Load(dirID)
 		if hasResourceKey {
 			resourceKeys = append(resourceKeys, fmt.Sprintf("%s/%s", dirID, resourceKey))
@@ -1220,6 +1224,7 @@ func fixMimeTypeMap(in map[string][]string) (out map[string][]string) {
 	}
 	return out
 }
+
 func isInternalMimeType(mimeType string) bool {
 	return strings.HasPrefix(mimeType, "application/vnd.google-apps.")
 }
@@ -3988,7 +3993,7 @@ func (f *Fs) getRemoteInfoWithExport(ctx context.Context, remote string) (
 	}
 	directoryID = actualID(directoryID)
 
-	found, err := f.list(ctx, []string{directoryID}, leaf, false, false, f.opt.TrashedOnly, false, func(item *drive.File) bool {
+	found, err := f.list(ctx, []string{directoryID}, leaf, false, true, f.opt.TrashedOnly, false, func(item *drive.File) bool {
 		if !f.opt.SkipGdocs {
 			extension, exportName, exportMimeType, isDocument = f.findExportFormat(ctx, item)
 			if exportName == leaf {
