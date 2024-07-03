@@ -2101,8 +2101,8 @@ func (f *Fs) listRRunner(ctx context.Context, wg *sync.WaitGroup, in chan listRE
 						continue
 					}
 				}
-				remote := path.Join(paths[i], item.Name)
-				entry, err := f.itemToDirEntry(ctx, remote, item)
+				//remote := path.Join(paths[i], item.Name)
+				entry, err := f.itemToDirEntry(ctx, item.Name, item)
 				if err != nil {
 					iErr = err
 					return true
